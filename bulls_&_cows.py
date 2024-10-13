@@ -5,6 +5,20 @@ author: Petr Boček
 email: bocek2@seznam.cz
 discord: Seth_Cz#8510
 """
+# Hra Bulls & Cows
+
+# Ve hře hráč hádá náhodné čtyřmístné číslo
+# (číslo nezačíná "0" a číslice jsou unikátní). 
+# Pokud hráč uhodne číslice, ale ne jejich správné
+# umístění hra mu vrátí odpovídající počet "Cows".
+# Pokud hráč uhodne číslice i jejich správné umístění
+# hra mu vrátí odpovídající počet "Bulls". Jakmile
+# hráč číslo uhodne dostane možnost výsledek uložit a
+# následně se hra ukončí.
+
+# Při psaní jsem zkoušel různé postupy, na které jsem
+# narazil, takže nejsem úplně konzistentí, jen mě to zajímalo :)
+
 
 import os
 import sys
@@ -32,7 +46,7 @@ def greet_user() -> str:
     return
 
 
-def generate_random_number() -> str:
+def generate_random_number() -> str:    # while cyklus a podmínky by měly zajistit unikátnost číslic
 
     """
     Generates a random four-digit number, where each digit is unique
@@ -125,7 +139,7 @@ def print_tip_result(bulls_cows: tuple[int], number_of_guess: int) -> str:
             f"{"-" * 47}"
             )
         
-    elif bulls_cows[0] == 1 or bulls_cows[1] == 1:
+    elif bulls_cows[0] == 1 or bulls_cows[1] == 1:      # úprava množného/jednotného čísla odpovědi na tip uživatele
         if bulls_cows[0] == 1 == bulls_cows[1]:
             result = f"{bulls_cows[0]} bull, {bulls_cows[1]} cow\n{"-" * 47}"
         elif bulls_cows[0] == 1:
@@ -139,7 +153,7 @@ def print_tip_result(bulls_cows: tuple[int], number_of_guess: int) -> str:
     return result
 
 
-def request_users_nickname(blank_nick: str ="") -> str:
+def request_nickname(blank_nick: str ="") -> str:   # zkoušel jsem rekurzy pro vyžádání jména kvůli uložení výsledku
 
     """
     Gives the user the option to save the game score and asks for the user's nickname.
@@ -149,7 +163,7 @@ def request_users_nickname(blank_nick: str ="") -> str:
     print(f"{"-" * 47}")
 
     if save.upper() == "Y":
-        nick_name = input("Enter your nickname\n(max 5 alphanumeric characters long): \n")
+        nick_name = input("Enter your nickname\n(max 5 alphanumeric characters): \n")
         print(f"{"-" * 47}")
         if len(nick_name) <= 5 and nick_name.isalnum():
             return nick_name
@@ -170,10 +184,10 @@ def request_users_nickname(blank_nick: str ="") -> str:
         print()
         nick_name = ""
 
-    return request_users_nickname(blank_nick + nick_name)
+    return request_nickname(blank_nick + nick_name)
 
 
-def save_score_csv(
+def save_score_csv(                 # vytvoří v adresáři s hrou soubor "savesbc.csv" s uloženými výsledky
         nick_name: str,
         number_of_guess: int,
         final_time: str
@@ -200,7 +214,7 @@ def save_score_csv(
     return
 
 
-def retrieve_saved_score(saved_score_file: str = "savesbc.csv") -> tuple[list[str | int], ...] | str:
+def retrieve_save(saved_score: str = "savesbc.csv") -> tuple[list[str | int], ...] | str:
 
     """
     Returns all saved scores from the file savesbc.csv as a tuple.
@@ -208,20 +222,20 @@ def retrieve_saved_score(saved_score_file: str = "savesbc.csv") -> tuple[list[st
     """
 
     try:
-        with open(saved_score_file, mode="r", encoding="utf-8", newline='') as csv_save:
+        with open(saved_score, mode="r", encoding="utf-8", newline='') as csv_save:
             score_reader = csv.reader(csv_save)
             return tuple(score_reader)
 
-    except FileNotFoundError:
+    except FileNotFoundError:       # podle toho jak program pracuje by k výjimce nemělo dojít, ale kdo ví...
         print("File with saved score not found.")
     
 
-def pick_top_five_scores(raw_scores_data: tuple[list[str | int], ...]) -> tuple[list[str | int], ...]:
+def pick_five(raw_data: tuple[list[str | int], ...]) -> tuple[list[str | int], ...]:
 
     """
     Sorts scores data by number of guesses and final time and return five top scores.
     """
-    ordered_scores_data = sorted(raw_scores_data[1:], key= itemgetter(1, 2))
+    ordered_scores_data = sorted(raw_data[1:], key= itemgetter(1, 2))       # pochopil jsem, že argumentem pro "key" musí být callable objekt a ten právě vrací "itemgetter"
     #ordered_scores_data_lambda = sorted(test_tuple[1:], key= lambda tup: (tup[1], tup[2]))
 
     if len(ordered_scores_data) > 5:
@@ -229,12 +243,12 @@ def pick_top_five_scores(raw_scores_data: tuple[list[str | int], ...]) -> tuple[
     else:
         top_five = ordered_scores_data
 
-    top_five.insert(0, raw_scores_data[0])
+    top_five.insert(0, raw_data[0])
 
     return tuple(top_five)
 
 
-def print_top_five(top_five: tuple[list[str | int], ...]) -> str:
+def print_top_five(top_five: tuple[list[str | int], ...]) -> str:   # zkusil jsem pomocí "for" cyklu a "time.sleep()" napodobit psací stroj 
 
     """
     Prints the top five scores from the save file if available.
@@ -246,7 +260,7 @@ def print_top_five(top_five: tuple[list[str | int], ...]) -> str:
         for record in row:
             for char in record:
                 print(char, end="", flush=True); time.sleep(0.085)
-            print(f"\t{" ":^8}", end=""); time.sleep(0.35)
+            print(f"\t{" ":^8}", end=""); time.sleep(0.35)      # zarovnání textu jsem udělal metodou pokus a omyl, jinak jsem na to nepřišel :(
         print(); time.sleep(0.35)
             
     print(f"{"-" * 47}")
@@ -259,8 +273,8 @@ def main():
     greet_user()
 
     random_number = generate_random_number()
-    number_of_guess = 1
-    start = time.time()
+    number_of_guess = 1     # začíná 1, aby byl započítaný i poslední pokus, kdy je správně uhodnuto číslo
+    start = time.time()     # začátek měření doby hádání
 
     while True:
         
@@ -280,18 +294,18 @@ def main():
                 continue
             
             else:
-                end = time.time()
-                formated_time = str(datetime.timedelta(seconds=round(end-start)))
+                end = time.time()       # konec měření doby hádání
+                formated_time = str(datetime.timedelta(seconds=round(end-start)))       # zformátování doby hádání knihovnou "datetime"
                 print(f"It took you {formated_time}\n{"-" * 47}")   
                 break
     
-    nick_name = request_users_nickname()
+    nick_name = request_nickname()
 
     save_score_csv(nick_name, number_of_guess, formated_time)
 
-    raw_scores_data = retrieve_saved_score()
+    raw_data = retrieve_save()
 
-    top_five = pick_top_five_scores(raw_scores_data)
+    top_five = pick_five(raw_data)
 
     print_top_five(top_five)
 
